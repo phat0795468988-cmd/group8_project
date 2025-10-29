@@ -1,9 +1,9 @@
 # Dự Án Quản Lý Sản Phẩm
 
 ## Thành viên
-- Trần Nguyễn Phương Anh: Frontend
-- Nguyễn Thanh Sơn: Backend
-- Hồ Vủ Minh Tài: Database
+- Dương Chấn Huy: Frontend
+- Nguyễn Thành Phát: Backend
+- Dương Minh Tân: Database
 
 ## Giới thiệu
 Dự án **Quản Lý Sản Phẩm** là ứng dụng web cho phép người dùng thực hiện các thao tác **CRUD (Create – Read – Update – Delete)** trên danh sách sản phẩm.  
@@ -56,7 +56,7 @@ npm start
 
 ### Cách 2: Chạy thủ công
 
-#### Backend (Port 5000)
+#### Backend (Port 3000)
 ```bash
 cd backend
 npm install
@@ -72,7 +72,7 @@ npm start
 
 ## Truy cập ứng dụng
 - Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
+- Backend API: http://localhost:3000
 
 ## API Endpoints
 - GET /users - Lấy danh sách users
