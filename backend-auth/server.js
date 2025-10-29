@@ -1,22 +1,21 @@
 const express = require("express");
-const app = express();
-
-app.use(express.json());
-
-// Import routes
+const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 
-// Sử dụng routes
+const app = express();
+
+// 👇 Cực kỳ quan trọng: middleware để đọc JSON body
+app.use(express.json());
+
+// Kết nối MongoDB
+connectDB();
+
+// Routes
 app.use("/api/auth", authRoutes);
 
-// Route test mặc định
+// Route test
 app.get("/", (req, res) => {
-  res.send(`
-    <h1>Backend-Auth API</h1>
-    <p>Server đang chạy!</p>
-    <p>Thử đăng nhập bằng Postman hoặc fetch:</p>
-    <code>POST /api/auth/login</code>
-  `);
+  res.send("Backend-Auth API is running...");
 });
 
 // Chạy server
