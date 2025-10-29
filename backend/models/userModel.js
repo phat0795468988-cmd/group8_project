@@ -1,10 +1,8 @@
-let users = [];
-let nextId = 1;
+// models/userModel.js
+let users = []; // Giả lập database trong bộ nhớ
 
-exports.getAll = () => users;
-
-exports.create = ({ name, email }) => {
-  const user = { id: nextId++, name, email };
-  users.push(user);
-  return user;
+module.exports = {
+  getAll: () => users,
+  findByEmail: (email) => users.find((u) => u.email === email),
+  addUser: (user) => users.push(user),
 };
