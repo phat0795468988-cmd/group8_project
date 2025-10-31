@@ -1,0 +1,117 @@
+.user-management {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: var(--text-on-surface);
+}
+
+.page-title {
+  color: var(--text-strong);
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 2em;
+}
+
+/* Style cho form */
+.edit-form {
+  background: var(--surface-soft);
+  padding: 20px;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(7px);
+  color: var(--text-on-surface);
+}
+
+.edit-form h3 {
+  color: var(--text-strong);
+  margin-bottom: 20px;
+}
+
+.form-group { margin-bottom: 15px; }
+
+input[type="text"],
+input[type="email"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  font-size: 16px;
+  background: #181c2b;
+  color: #e0e7ef;
+  caret-color: var(--primary);
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder {
+  color: #94a3b8;
+}
+
+/* Style cho bảng */
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.06));
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.users-table th {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: white;
+  padding: 12px;
+  text-align: left;
+}
+
+.users-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.users-table tr:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+/* Style cho buttons */
+.btn {
+  padding: 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: filter 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  margin: 0 5px;
+}
+
+.btn-edit { background: var(--primary); color: white; }
+
+.btn-delete { background: var(--danger); color: white; }
+
+.btn-save { background: var(--success); color: white; }
+
+.btn-cancel { background: rgba(255,255,255,0.08); color: var(--text); border-color: var(--border); }
+
+.btn:hover { filter: brightness(1.05); transform: translateY(-1px); }
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .user-management {
+    padding: 10px;
+  }
+  
+  .users-table {
+    font-size: 14px;
+  }
+  
+  .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
