@@ -16,8 +16,36 @@ if (!process.env.MONGO_URI) {
   dotenv.config({ path: './server.env' });
 }
 
+// CORS Configuration
+const allowedOrigins = [
+  'http://localhost:3001',                    // Local dev frontend
+  'http://localhost:3000',                    // Alternative local
+  'https://group8-project.onrender.com',      // Backend itself
+  process.env.FRONTEND_URL                    // Production frontend URL from env
+].filter(Boolean); // Remove undefined values
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, Postman, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      // For development, allow all origins
+      if (process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 // Middleware
-app.use(cors()); // Cho phép CORS cho frontend
+app.use(cors(corsOptions)); // CORS với whitelist
 app.use(express.json()); // Đọc JSON từ body request
 
 // Route test kết nối
