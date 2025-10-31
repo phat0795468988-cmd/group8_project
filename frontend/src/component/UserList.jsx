@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
+import API_BASE_URL from '../config/api';
 import "./UserList.css";
 
 function UserList() {
@@ -15,7 +16,7 @@ function UserList() {
   // Lấy danh sách user khi component load
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/users", {
+      const res = await axios.get(`${API_BASE_URL}/api/users`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       setUsers(res.data);
@@ -43,7 +44,7 @@ function UserList() {
     }
 
     try {
-      const response = await axios.delete(`http://localhost:3000/api/users/${id}`, {
+      const response = await axios.delete(`${API_BASE_URL}/api/users/${id}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (response.data) {
@@ -86,7 +87,7 @@ function UserList() {
     
     try {
       const response = await axios.put(
-        `http://localhost:3000/api/users/${editingUser.id}`,
+        `${API_BASE_URL}/api/users/${editingUser.id}`,
         formData
       );
       

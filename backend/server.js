@@ -7,8 +7,14 @@ const cors = require('cors');
 // Khởi tạo ứng dụng Express
 const app = express();
 
-// Đọc biến môi trường từ file server.env
-dotenv.config({ path: './server.env' });
+// Đọc biến môi trường từ file phù hợp với môi trường
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local';
+dotenv.config({ path: `./${envFile}` });
+
+// Fallback to server.env for backward compatibility
+if (!process.env.MONGO_URI) {
+  dotenv.config({ path: './server.env' });
+}
 
 // Middleware
 app.use(cors()); // Cho phép CORS cho frontend

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import API_BASE_URL from '../config/api';
 import UploadAvatar from './UploadAvatar';
 import './ProfilePage.css';
 
@@ -21,7 +22,7 @@ const ProfilePage = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:3000/api/profile', {
+      const response = await axios.get(`${API_BASE_URL}/api/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -63,7 +64,7 @@ const ProfilePage = () => {
     setMessage('');
 
     try {
-      const response = await axios.put('http://localhost:3000/api/profile', formData, {
+      const response = await axios.put(`${API_BASE_URL}/api/profile`, formData, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

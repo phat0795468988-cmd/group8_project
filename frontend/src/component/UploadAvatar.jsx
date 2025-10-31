@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
+import API_BASE_URL from '../config/api';
 import './UploadAvatar.css';
 
 const UploadAvatar = ({ user, onAvatarUpdate }) => {
@@ -92,7 +93,7 @@ const UploadAvatar = ({ user, onAvatarUpdate }) => {
       formData.append('avatar', file);
 
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/upload/avatar', {
+      const response = await fetch(`${API_BASE_URL}/api/upload/avatar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -132,7 +133,7 @@ const UploadAvatar = ({ user, onAvatarUpdate }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/upload/avatar', {
+      const response = await fetch(`${API_BASE_URL}/api/upload/avatar`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

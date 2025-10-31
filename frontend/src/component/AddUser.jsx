@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import API_BASE_URL from '../config/api';
 import "./AddUser.css";
 
 function AddUser({ onUserAdded }) {
@@ -22,7 +23,7 @@ function AddUser({ onUserAdded }) {
     }
 
     try {
-      await axios.post("http://localhost:3000/api/users", { 
+      await axios.post(`${API_BASE_URL}/api/users`, { 
         name: name.trim(), 
         email: email.trim() 
       });
