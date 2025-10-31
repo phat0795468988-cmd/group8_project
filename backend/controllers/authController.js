@@ -1,78 +1,264 @@
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const User = require("../models/user");
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 
-// Tạo JWT
-function signToken(user) {
-  const secret = process.env.JWT_SECRET || "your_jwt_secret";
-  return jwt.sign(
-    { id: user._id, username: user.username, role: user.role },
-    secret,
-    { expiresIn: "1h" }
-  );
-}
+// Ensure we always have a JWT secret in non-production to avoid runtime 500s
+const getJwtSecret = () => {
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (process.env.NODE_ENV !== 'production') return 'dev-secret-change-me';
+  return null;
+};
 
-// Signup
-exports.signup = async (req, res) => {
+const signAuthToken = (payload) => {
+  const secret = getJwtSecret();
+  if (!secret) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+  return jwt.sign(payload, secret, { expiresIn: '30d' });
+};
+
+// Cấu hình email transporter
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+};
+
+// Đăng ký
+const signup = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: "Vui lòng điền đủ thông tin!" });
+    const { name, email, password, role } = req.body;
+
+    // Kiểm tra email đã tồn tại
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email đã tồn tại'
+      });
     }
 
-    const existed = await User.findOne({ email });
-    if (existed) {
-      return res.status(400).json({ message: "Email đã được sử dụng" });
-    }
+    // Tạo user mới (hash sẽ xử lý ở pre-save middleware)
+    const user = new User({
+      name,
+      email,
+      password,
+      role: role || 'user'
+    });
 
-    const user = await User.create({ username, email, password });
-    const token = signToken(user);
+    await user.save();
+
+    // Tạo JWT token
+    const token = signAuthToken({ userId: user._id, email: user.email, role: user.role });
 
     res.status(201).json({
-      message: "Đăng ký thành công!",
-      user: { id: user._id, username: user.username, email: user.email, role: user.role },
-      token,
+      success: true,
+      message: 'Đăng ký thành công',
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        },
+        token
+      }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server',
+      error: error.message
+    });
   }
 };
 
-// Login
-exports.login = async (req, res) => {
+// Đăng nhập
+const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: "Vui lòng điền email và mật khẩu!" });
-    }
 
+    // Kiểm tra user tồn tại
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: "Email không tồn tại!" });
+      return res.status(401).json({
+        success: false,
+        message: 'Email hoặc mật khẩu không đúng'
+      });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Mật khẩu không đúng!" });
+    // Kiểm tra password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Email hoặc mật khẩu không đúng'
+      });
     }
 
-    const token = signToken(user);
-    res.status(200).json({
-      message: "Đăng nhập thành công!",
-      user: { id: user._id, username: user.username, email: user.email, role: user.role },
-      token,
+    // Tạo JWT token
+    const token = signAuthToken({ userId: user._id, email: user.email, role: user.role });
+
+    res.json({
+      success: true,
+      message: 'Đăng nhập thành công',
+      data: {
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        },
+        token
+      }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server',
+      error: error.message
+    });
   }
 };
 
-// Logout (tuỳ ứng dụng, với JWT thường phía client tự xoá token)
-exports.logout = (req, res) => {
-  res.status(200).json({ message: "Đăng xuất thành công!" });
+// Quên mật khẩu
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    // Kiểm tra user tồn tại
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Email không tồn tại trong hệ thống'
+      });
+    }
+
+    // Tạo reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = Date.now() + 10 * 60 * 1000; // 10 phút
+
+    // Lưu reset token vào database
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpiry = resetTokenExpiry;
+    await user.save();
+
+    const resetUrl = `http://localhost:3001/reset-password?token=${resetToken}`;
+
+    // Nếu chưa cấu hình SMTP, trả về resetUrl để test
+    const hasEmailConfig = !!(process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS);
+    if (!hasEmailConfig || process.env.NODE_ENV !== 'production') {
+      console.log('[DEV] Reset password URL:', resetUrl);
+      return res.json({
+        success: true,
+        message: hasEmailConfig
+          ? 'Đã tạo token reset. Kiểm tra response để lấy URL.'
+          : 'Chế độ DEV: trả về URL reset trực tiếp (chưa cấu hình SMTP).',
+        data: { resetUrl, token: resetToken }
+      });
+    }
+
+    // Đã cấu hình SMTP: gửi email thực
+    try {
+      const transporter = createTransporter();
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'Reset Password - Group 2 Project',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Reset Password</h2>
+            <p>Xin chào ${user.name},</p>
+            <p>Bạn đã yêu cầu reset mật khẩu. Vui lòng click vào link bên dưới để đặt lại mật khẩu:</p>
+            <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">Reset Password</a>
+            <p>Link này sẽ hết hạn sau 10 phút.</p>
+            <p>Nếu bạn không yêu cầu reset mật khẩu, vui lòng bỏ qua email này.</p>
+            <br>
+            <p>Trân trọng,<br>Team Group 2</p>
+          </div>
+        `
+      };
+      await transporter.sendMail(mailOptions);
+      return res.json({
+        success: true,
+        message: 'Email reset password đã được gửi. Vui lòng kiểm tra hộp thư của bạn.'
+      });
+    } catch (mailErr) {
+      console.error('Send mail failed, fallback returning resetUrl:', mailErr);
+      return res.json({
+        success: true,
+        message: 'Không gửi được email trong môi trường hiện tại. Trả về URL reset để test.',
+        data: { resetUrl, token: resetToken }
+      });
+    }
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server khi gửi email',
+      error: error.message
+    });
+  }
 };
 
-// Test route
-exports.test = (req, res) => {
-  res.send("API đang hoạt động!");
+// Reset mật khẩu
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    // Tìm user với token hợp lệ
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token không hợp lệ hoặc đã hết hạn'
+      });
+    }
+
+    // Cập nhật password mới; hash sẽ do middleware pre-save xử lý
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpiry = undefined;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Mật khẩu đã được đặt lại thành công'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi server',
+      error: error.message
+    });
+  }
+};
+
+// Đăng xuất
+const logout = async (req, res) => {
+  res.json({
+    success: true,
+    message: 'Đăng xuất thành công'
+  });
+};
+
+module.exports = {
+  signup,
+  login,
+  forgotPassword,
+  resetPassword,
+  logout
 };
