@@ -39,8 +39,7 @@ const userSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
-
-// Hash password trước khi lưu
+// Mã hóa password trước khi lưu
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
   
