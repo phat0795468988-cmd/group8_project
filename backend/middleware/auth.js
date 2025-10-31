@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/user');
 const UserManagement = require('../models/UserManagement');
 
 // Verify JWT and attach user document to req.user

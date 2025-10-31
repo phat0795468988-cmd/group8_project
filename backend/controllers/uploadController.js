@@ -1,6 +1,6 @@
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
-const User = require('../models/User');
+const User = require('../models/user');
 
 // Cấu hình Cloudinary
 cloudinary.config({
